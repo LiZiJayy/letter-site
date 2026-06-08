@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>秘密信箱</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(120, 119, 198, 0.35), transparent 35%),
+        radial-gradient(circle at top right, rgba(255, 119, 198, 0.25), transparent 30%),
+        linear-gradient(135deg, #0f172a, #111827 45%, #1e293b 100%);
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 24px;
+      padding: 32px 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .brand {
+      font-size: 14px;
+      color: #cbd5e1;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      margin: 0 0 28px;
+      color: #cbd5e1;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .choice-group {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .choice-btn,
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      padding: 15px 18px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .choice-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      text-align: left;
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: white;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.35);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.96;
+    }
+
+    .secondary-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      margin-top: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .secondary-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: rgba(96, 165, 250, 0.8);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.8;
+    }
+
+    .message {
+      margin-top: 14px;
+      font-size: 14px;
+      color: #cbd5e1;
+      min-height: 22px;
+    }
+
+    .letter-box {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+      white-space: pre-wrap;
+      line-height: 1.9;
+      min-height: 180px;
+    }
+
+    .top-tip {
+      display: inline-block;
+      margin-bottom: 18px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: #cbd5e1;
+      font-size: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .panel {
+        padding: 24px 18px;
+        border-radius: 20px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 第一步：选择模式 -->
+    <section class="panel active" id="stepChooseMode">
+      <div class="brand">Secret Letter</div>
+      <h1>欢迎来到秘密信箱</h1>
+      <p class="subtitle">
+        你可以写下一封只有知道密码的人才能看到的信，
+        也可以输入密码，提取那封已经为你写好的内容。
+      </p>
+
+      <div class="choice-group">
+        <button class="choice-btn" id="chooseWrite">我要写信</button>
+        <button class="choice-btn" id="chooseRead">我要提取信件</button>
+      </div>
+    </section>
+
+    <!-- 第二步：输入密码 -->
+    <section class="panel" id="stepPassword">
+      <div class="top-tip" id="modeTip">当前模式：写信</div>
+      <h1>请输入密码</h1>
+      <p class="subtitle">
+        请输入一个 8 位数字密码。后续系统会根据这个密码为你保存或提取信件。
+      </p>
+
+      <label for="passwordInput">8 位数字密码</label>
+      <input id="passwordInput" type="text" maxlength="8" placeholder="请输入 8 位数字密码" />
+
+      <button class="primary-btn" id="confirmPasswordBtn">确认</button>
+      <button class="secondary-btn" id="backToModeBtn">返回上一步</button>
+
+      <div class="message" id="passwordMsg"></div>
+    </section>
+
+    <!-- 第三步A：写信 -->
+    <section class="panel" id="stepWriteLetter">
+      <div class="top-tip">写信模式</div>
+      <h1>写下这封信</h1>
+      <p class="subtitle">
+        这封信会绑定到你刚刚输入的密码。知道相同密码的人，可以查看这封信。
+      </p>
+
+      <label for="letterContent">信件内容</label>
+      <textarea id="letterContent" placeholder="请输入你想写下的内容......"></textarea>
+
+      <button class="primary-btn" id="saveLetterBtn">保存信件</button>
+      <button class="secondary-btn" id="backToPasswordFromWriteBtn">返回修改密码</button>
+
+      <div class="message" id="writeMsg"></div>
+    </section>
+
+    <!-- 第三步B：查看信 -->
+    <section class="panel" id="stepReadLetter">
+      <div class="top-tip">提取信件模式</div>
+      <h1>你的信件</h1>
+      <p class="subtitle">
+        如果数据库中存在对应密码的信件，内容会显示在下方。
+      </p>
+
+      <div class="letter-box" id="letterResult">正在加载信件内容...</div>
+
+      <button class="secondary-btn" id="backToPasswordFromReadBtn">返回重新输入密码</button>
+      <button class="secondary-btn" id="backToHomeBtn">返回首页</button>
+
+      <div class="message" id="readMsg"></div>
+    </section>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://eyyzzulqrzbespjfizqr.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_UUyoVsBiMlpz_40xGB1t1w_xM_HFVnc";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    let currentMode = "";
+    let currentPassword = "";
+
+    const stepChooseMode = document.getElementById("stepChooseMode");
+    const stepPassword = document.getElementById("stepPassword");
+    const stepWriteLetter = document.getElementById("stepWriteLetter");
+    const stepReadLetter = document.getElementById("stepReadLetter");
+
+    const chooseWrite = document.getElementById("chooseWrite");
+    const chooseRead = document.getElementById("chooseRead");
+    const modeTip = document.getElementById("modeTip");
+    const passwordInput = document.getElementById("passwordInput");
+    const confirmPasswordBtn = document.getElementById("confirmPasswordBtn");
+    const backToModeBtn = document.getElementById("backToModeBtn");
+    const passwordMsg = document.getElementById("passwordMsg");
+
+    const letterContent = document.getElementById("letterContent");
+    const saveLetterBtn = document.getElementById("saveLetterBtn");
+    const backToPasswordFromWriteBtn = document.getElementById("backToPasswordFromWriteBtn");
+    const writeMsg = document.getElementById("writeMsg");
+
+    const letterResult = document.getElementById("letterResult");
+    const readMsg = document.getElementById("readMsg");
+    const backToPasswordFromReadBtn = document.getElementById("backToPasswordFromReadBtn");
+    const backToHomeBtn = document.getElementById("backToHomeBtn");
+
+    function showStep(stepElement) {
+      [stepChooseMode, stepPassword, stepWriteLetter, stepReadLetter].forEach(panel => {
+        panel.classList.remove("active");
+      });
+      stepElement.classList.add("active");
+    }
+
+    function resetMessages() {
+      passwordMsg.textContent = "";
+      writeMsg.textContent = "";
+      readMsg.textContent = "";
+    }
+
+    chooseWrite.addEventListener("click", () => {
+      currentMode = "write";
+      modeTip.textContent = "当前模式：写信";
+      passwordInput.value = "";
+      resetMessages();
+      showStep(stepPassword);
+    });
+
+    chooseRead.addEventListener("click", () => {
+      currentMode = "read";
+      modeTip.textContent = "当前模式：提取信件";
+      passwordInput.value = "";
+      resetMessages();
+      showStep(stepPassword);
+    });
+
+    backToModeBtn.addEventListener("click", () => {
+      resetMessages();
+      showStep(stepChooseMode);
+    });
+
+    backToPasswordFromWriteBtn.addEventListener("click", () => {
+      resetMessages();
+      showStep(stepPassword);
+    });
+
+    backToPasswordFromReadBtn.addEventListener("click", () => {
+      resetMessages();
+      showStep(stepPassword);
+    });
+
+    backToHomeBtn.addEventListener("click", () => {
+      resetMessages();
+      showStep(stepChooseMode);
+    });
+
+    confirmPasswordBtn.addEventListener("click", async () => {
+      const password = passwordInput.value.trim();
+      passwordMsg.textContent = "";
+
+      if (!/^\d{8}$/.test(password)) {
+        passwordMsg.textContent = "密码必须是 8 位数字。";
+        return;
+      }
+
+      currentPassword = password;
+
+      if (currentMode === "write") {
+        letterContent.value = "";
+        showStep(stepWriteLetter);
+        return;
+      }
+
+      if (currentMode === "read") {
+        showStep(stepReadLetter);
+        letterResult.textContent = "正在加载信件内容...";
+        readMsg.textContent = "";
+
+        const { data, error } = await supabaseClient
+          .from("letters")
+          .select("content, created_at")
+          .eq("password", currentPassword)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (error) {
+          letterResult.textContent = "";
+          readMsg.textContent = "读取失败：" + error.message;
+          return;
+        }
+
+        if (data && data.length > 0) {
+          letterResult.textContent = data[0].content;
+        } else {
+          letterResult.textContent = "";
+          readMsg.textContent = "没有找到对应的信件。";
+        }
+      }
+    });
+
+    saveLetterBtn.addEventListener("click", async () => {
+      const content = letterContent.value.trim();
+      writeMsg.textContent = "";
+
+      if (!content) {
+        writeMsg.textContent = "信件内容不能为空。";
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("letters")
+        .insert([{ password: currentPassword, content }]);
+
+      if (error) {
+        writeMsg.textContent = "保存失败：" + error.message;
+        return;
+      }
+
+      writeMsg.textContent = "保存成功。把这 8 位密码告诉对方，对方就可以提取这封信。";
+      letterContent.value = "";
+    });
+  </script>
+</body>
+</html>
