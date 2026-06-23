@@ -427,7 +427,7 @@
 
       <div class="action-row">
         <div class="optimize-row">
-          <button class="primary-btn small-action-btn" id="optimizeLetterBtn">优化信件</button>
+          <button class="primary-btn small-action-btn" id="optimizeLetterBtn">默认ai优化</button>
           <button class="primary-btn small-action-btn" id="customOptimizeBtn">自定义ai优化</button>
         </div>
         <button class="primary-btn small-action-btn" id="saveLetterBtn">保存信件</button>
@@ -545,7 +545,7 @@
       customOptimizeBtn.disabled = loading;
       confirmCustomOptimizeBtn.disabled = loading;
 
-      optimizeLetterBtn.textContent = loading ? "优化中..." : "优化信件";
+      optimizeLetterBtn.textContent = loading ? "优化中..." : "默认ai优化";
       customOptimizeBtn.textContent = loading ? "优化中..." : "自定义ai优化";
       confirmCustomOptimizeBtn.textContent = loading ? "优化中..." : "确认";
     }
